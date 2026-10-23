@@ -13,6 +13,8 @@ import java.nio.file.Path;
 public class GlassConfig {
     // Card
     public boolean cardVisible = true;
+    public float cardX = -1f;                // left edge as a fraction of screen width (-1 = use corner)
+    public float cardY = -1f;                // top edge as a fraction of screen height
     public boolean autoShow = true;          // pop the card up when Spotify starts
     public String corner = "top_right";      // top_left, top_right, bottom_left, bottom_right
     public int offsetX = 8;
@@ -25,11 +27,19 @@ public class GlassConfig {
     public int tintAlpha = 34;               // 0 - 255
     public int rimStrength = 70;             // 0 - 100, bright specular edge
     public int chroma = 35;                  // 0 - 100, red/blue colour fringe on the edges
-    public boolean albumBackdrop = true;     // blurred album art behind the glass
+    public boolean albumBackdrop = true;     // (old setting, replaced by backdrop)
+    public String backdrop = "blur";         // blur (the game behind the card), album (blurred cover), dark
+    public int blurStrength = 6;             // 1 - 12
+    public boolean albumTint = true;         // tint the glass with the cover's colours
+    public int albumTintAlpha = 70;          // 0 - 255
     public boolean liquidSheen = true;       // slow moving light band
 
     // Lyrics in the world
-    public String lyricMode = "horizon";     // horizon, tree, off
+    public String lyricMode = "screen";      // screen, horizon, tree, off
+    public float lyricX = 0.5f;              // on-screen lyrics centre, fraction of screen width
+    public float lyricY = 0.08f;             // fraction of screen height
+    public float lyricHudSize = 1.25f;
+    public boolean lyricPill = true;         // glass pill behind on-screen lyrics
     public boolean horizonFollowLook = true; // lyrics drift to wherever you're facing
     public float horizonBearing = 270f;      // compass degrees when not following (270 = west, the sunset)
     public float horizonElevation = 3f;      // degrees above the horizon

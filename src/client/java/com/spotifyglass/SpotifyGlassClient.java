@@ -27,7 +27,8 @@ public class SpotifyGlassClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("Spotify Glass");
     public static GlassConfig CONFIG = new GlassConfig();
 
-    private static KeyMapping toggleKey, lyricsKey, playPauseKey, nextKey, prevKey;
+    private static KeyMapping toggleKey, lyricsKey, editorKey, playPauseKey, nextKey, prevKey;
+    private static boolean openEditor = false;
     private static String lastTrackKey = null;
     private static boolean wasPresent = false;
 
@@ -47,6 +48,8 @@ public class SpotifyGlassClient implements ClientModInitializer {
                 "key.spotifyglass.toggle", InputConstants.Type.KEYSYM, InputConstants.KEY_O, category));
         lyricsKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.spotifyglass.lyrics", InputConstants.Type.KEYSYM, InputConstants.KEY_K, category));
+        editorKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key.spotifyglass.editor", InputConstants.Type.KEYSYM, InputConstants.KEY_RSHIFT, category));
         playPauseKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.spotifyglass.play_pause", InputConstants.Type.KEYSYM, none, category));
         nextKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
@@ -64,6 +67,11 @@ public class SpotifyGlassClient implements ClientModInitializer {
     private static void tick(Minecraft mc) {
         while (toggleKey.consumeClick()) toggleCard(mc);
         while (lyricsKey.consumeClick()) cycleLyrics(mc);
+        while (editorKey.consumeClick()) openEditor = true;
+        if (openEditor && mc.screen == null) { // waits for the chat box to close after /sg edit
+            openEditor = false;
+            mc.setScreen(new EditorScreen());
+        }
         while (playPauseKey.consumeClick()) PlayerWatcher.command("play-pause");
         while (nextKey.consumeClick()) PlayerWatcher.command("next");
         while (prevKey.consumeClick()) PlayerWatcher.command("previous");
@@ -92,12 +100,14 @@ public class SpotifyGlassClient implements ClientModInitializer {
 
     private static void cycleLyrics(Minecraft mc) {
         String next = switch (CONFIG.lyricMode) {
+            case "screen" -> "horizon";
             case "horizon" -> "tree";
             case "tree" -> "off";
-            default -> "horizon";
+            default -> "screen";
         };
         setLyricMode(next);
         say(mc, switch (next) {
+            case "screen" -> "Lyrics on screen";
             case "horizon" -> "Lyrics on the horizon";
             case "tree" -> "Lyrics in the nearest tree (horizon if none nearby)";
             default -> "Lyrics on the card";
@@ -124,7 +134,7 @@ public class SpotifyGlassClient implements ClientModInitializer {
         }));
 
         LiteralArgumentBuilder<FabricClientCommandSource> lyrics = ClientCommandManager.literal("lyrics");
-        for (String mode : new String[]{"horizon", "tree", "off"}) {
+        for (String mode : new String[]{"screen", "horizon", "tree", "off"}) {
             lyrics.then(ClientCommandManager.literal(mode).executes(ctx -> {
                 setLyricMode(mode);
                 return reply(ctx, "Lyrics placement: " + mode);
@@ -136,11 +146,60 @@ public class SpotifyGlassClient implements ClientModInitializer {
         for (String c : new String[]{"top_left", "top_right", "bottom_left", "bottom_right"}) {
             corner.then(ClientCommandManager.literal(c).executes(ctx -> {
                 CONFIG.corner = c;
+                CONFIG.cardX = -1;
+                CONFIG.cardY = -1;
                 CONFIG.save();
                 return reply(ctx, "Card moved to " + c.replace('_', ' '));
             }));
         }
         root.then(corner);
+
+        root.then(ClientCommandManager.literal("edit").executes(ctx -> {
+            openEditor = true;
+            return 1;
+        }));
+
+        // Playback
+        root.then(ClientCommandManager.literal("next").executes(ctx -> player(ctx, "Skipped", "next")));
+        root.then(ClientCommandManager.literal("skip").executes(ctx -> player(ctx, "Skipped", "next")));
+        root.then(ClientCommandManager.literal("prev").executes(ctx -> player(ctx, "Previous track", "previous")));
+        root.then(ClientCommandManager.literal("back").executes(ctx -> player(ctx, "Previous track", "previous")));
+        root.then(ClientCommandManager.literal("pause").executes(ctx -> player(ctx, "Paused", "pause")));
+        root.then(ClientCommandManager.literal("play").executes(ctx -> player(ctx, "Playing", "play")));
+        root.then(ClientCommandManager.literal("pp").executes(ctx -> player(ctx, "Play/pause", "play-pause")));
+        root.then(ClientCommandManager.literal("restart").executes(ctx -> player(ctx, "Back to the start", "position", "0")));
+        root.then(ClientCommandManager.literal("shuffle").executes(ctx -> player(ctx, "Shuffle toggled", "shuffle", "Toggle")));
+        LiteralArgumentBuilder<FabricClientCommandSource> repeat = ClientCommandManager.literal("repeat");
+        for (String[] mode : new String[][]{{"off", "None"}, {"song", "Track"}, {"playlist", "Playlist"}}) {
+            repeat.then(ClientCommandManager.literal(mode[0])
+                    .executes(ctx -> player(ctx, "Repeat " + mode[0], "loop", mode[1])));
+        }
+        root.then(repeat);
+        root.then(ClientCommandManager.literal("seek")
+                .then(ClientCommandManager.argument("seconds", IntegerArgumentType.integer(0, 36000))
+                        .executes(ctx -> {
+                            int sec = IntegerArgumentType.getInteger(ctx, "seconds");
+                            return player(ctx, "Jumped to " + sec / 60 + ":" + String.format("%02d", sec % 60),
+                                    "position", String.valueOf(sec));
+                        })));
+        root.then(ClientCommandManager.literal("forward")
+                .then(ClientCommandManager.argument("seconds", IntegerArgumentType.integer(1, 600))
+                        .executes(ctx -> {
+                            int sec = IntegerArgumentType.getInteger(ctx, "seconds");
+                            return player(ctx, "Forward " + sec + "s", "position", sec + "+");
+                        })));
+        root.then(ClientCommandManager.literal("rewind")
+                .then(ClientCommandManager.argument("seconds", IntegerArgumentType.integer(1, 600))
+                        .executes(ctx -> {
+                            int sec = IntegerArgumentType.getInteger(ctx, "seconds");
+                            return player(ctx, "Back " + sec + "s", "position", sec + "-");
+                        })));
+        root.then(ClientCommandManager.literal("volume")
+                .then(ClientCommandManager.argument("percent", IntegerArgumentType.integer(0, 100))
+                        .executes(ctx -> {
+                            int v = IntegerArgumentType.getInteger(ctx, "percent");
+                            return player(ctx, "Volume " + v + "%", "volume", String.format(java.util.Locale.ROOT, "%.2f", v / 100.0));
+                        })));
 
         root.then(ClientCommandManager.literal("follow").executes(ctx -> {
             CONFIG.horizonFollowLook = !CONFIG.horizonFollowLook;
@@ -204,6 +263,12 @@ public class SpotifyGlassClient implements ClientModInitializer {
         }));
 
         return root;
+    }
+
+    private static int player(CommandContext<FabricClientCommandSource> ctx, String msg, String... args) {
+        if (PlayerWatcher.state() == null) return reply(ctx, "Spotify isn't open");
+        PlayerWatcher.command(args);
+        return reply(ctx, msg);
     }
 
     private static int reply(CommandContext<FabricClientCommandSource> ctx, String msg) {

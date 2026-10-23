@@ -29,24 +29,30 @@ If the run shows a red cross, click it, open the **Build** step, and copy the li
 
 | Key | Action |
 |---|---|
+| Right Shift | Open the editor: drag the card and lyrics, change the glass with sliders |
 | O | Show or hide the card |
-| K | Lyrics: horizon, then tree, then off |
-| (unbound) | Play/pause, next, previous. Bind them under Options → Controls → Key Binds → Spotify Glass |
+| K | Lyrics: on screen, then horizon, then tree, then off (on the card) |
+| (unbound) | Play/pause, next, previous. Bind them in Options → Controls → Key Binds → Spotify Glass |
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `/sg lyrics horizon` / `tree` / `off` | Choose where lyrics appear |
-| `/sg corner top_left` (or `top_right`, `bottom_left`, `bottom_right`) | Move the card |
-| `/sg scale 1.5` | Card size (0.5 to 3) |
-| `/sg radius 14` | Corner roundness |
-| `/sg tint #9AD0FF` | Glass tint colour |
-| `/sg follow` | Choose whether horizon lyrics follow your view or stay at a fixed compass bearing |
-| `/sg offset -300` | Shift lyric timing in milliseconds if they run early or late |
-| `/sg refetch` | Look the lyrics up again |
-| `/sg status` | Shows what the mod currently detects |
-| `/sg reload` | Re-read the config file after editing it |
+| `/sg edit` | Open the editor |
+| `/sg skip` or `/sg next` | Next song |
+| `/sg back` or `/sg prev` | Previous song |
+| `/sg pause`, `/sg play`, `/sg pp` | Pause, play, toggle |
+| `/sg restart` | Start the song again |
+| `/sg seek 90` | Jump to 1:30 |
+| `/sg forward 10`, `/sg rewind 10` | Skip ahead or back by seconds |
+| `/sg volume 60` | Spotify volume (0 to 100) |
+| `/sg shuffle` | Toggle shuffle |
+| `/sg repeat off` / `song` / `playlist` | Repeat mode |
+| `/sg lyrics screen` / `horizon` / `tree` / `off` | Where lyrics appear |
+| `/sg corner top_left` (or `top_right`, `bottom_left`, `bottom_right`) | Snap the card to a corner |
+| `/sg scale 1.5`, `/sg radius 14`, `/sg tint #9AD0FF` | Card size, roundness, frost colour |
+| `/sg offset -300` | Shift lyric timing in milliseconds |
+| `/sg refetch`, `/sg status`, `/sg reload` | Lyrics again, what's detected, re-read config |
 
 Everything else lives in `~/.minecraft/config/spotifyglass.json`:
 - **Glass:** tint strength, rim brightness, colour fringe, and the blurred album backdrop on/off.

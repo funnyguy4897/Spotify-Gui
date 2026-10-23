@@ -27,7 +27,8 @@ public final class WorldLyrics {
     public static void render(WorldRenderContext ctx) {
         Minecraft mc = Minecraft.getInstance();
         GlassConfig c = SpotifyGlassClient.CONFIG;
-        if (mc.level == null || mc.player == null || "off".equals(c.lyricMode)) return;
+        if (mc.level == null || mc.player == null) return;
+        if (!"horizon".equals(c.lyricMode) && !"tree".equals(c.lyricMode)) return;
         PlayerWatcher.State st = PlayerWatcher.state();
         if (st == null) return;
 

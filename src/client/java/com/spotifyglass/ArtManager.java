@@ -27,6 +27,7 @@ public final class ArtManager {
     private static volatile String requested = "";
     private static volatile boolean ready = false;
     private static volatile int accent = 0xFF9A8CFF;
+    private static volatile int vivid = 0xFFB07CFF;
 
     private ArtManager() {}
 
@@ -37,6 +38,11 @@ public final class ArtManager {
     /** Average colour of the cover, used to tint the lyrics. */
     public static int accent() {
         return accent;
+    }
+
+    /** The most colourful part of the cover. */
+    public static int vivid() {
+        return vivid;
     }
 
     public static void request(String url) {
@@ -82,6 +88,17 @@ public final class ArtManager {
             }
             int n = t.length;
             int acc = 0xFF000000 | (int) (r / n) << 16 | (int) (g / n) << 8 | (int) (b / n);
+            int viv = acc;
+            float best = -1;
+            for (int px : t) {
+                float[] hsb = java.awt.Color.RGBtoHSB((px >> 16) & 255, (px >> 8) & 255, px & 255, null);
+                float score = hsb[1] * (0.35f + hsb[2]);
+                if (score > best) {
+                    best = score;
+                    viv = px | 0xFF000000;
+                }
+            }
+            final int vv = viv;
 
             BufferedImage up = new BufferedImage(BD_W, BD_H, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2 = up.createGraphics();
@@ -104,6 +121,7 @@ public final class ArtManager {
                 upload(ART, ART_SIZE, ART_SIZE, art);
                 upload(BACKDROP, BD_W, BD_H, bd);
                 accent = acc;
+                vivid = vv;
                 ready = true;
             });
         } catch (Exception e) {
