@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "spotifyglass",
+  "version": "${version}",
+  "name": "Spotify Glass",
+  "description": "A liquid-glass now-playing card for Spotify on Linux, with synced lyrics on the horizon or in the nearest tree.",
+  "authors": ["you"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.spotifyglass.SpotifyGlassClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.1",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
